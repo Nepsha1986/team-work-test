@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from './useTheme';
+import Stats from './Stats';
 
 function TodoItem({ todo }) {
   return <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>{todo.title}</li>;
@@ -12,6 +13,7 @@ function ExportButton() {
 
 function App() {
   const { theme, toggle } = useTheme();
+  const [view, setView] = useState('main');
   const [todos, setTodos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -29,11 +31,16 @@ function App() {
     setTitle(''); loadTodos();
   }
 
+  if (view === 'stats') return <Stats onClose={() => setView('main')} />;
+
   return (
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Advanced Todo App</h1>
-        <button onClick={toggle} title="Toggle theme">{theme === 'dark' ? '☀️' : '🌙'}</button>
+        <div>
+          <button onClick={() => setView('stats')}>Stats</button>
+          <button onClick={toggle} title="Toggle theme">{theme === 'dark' ? '☀️' : '🌙'}</button>
+        </div>
       </div>
       <ExportButton />
       <form onSubmit={handleSubmit}>
