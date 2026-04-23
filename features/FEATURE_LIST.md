@@ -24,4 +24,4 @@ Each feature is marked done by the Feature Team in the same PR that implements i
 - [ ] [017 - Statistics Dashboard](./017-statistics-dashboard.md)
 - [ ] [018 - Export Todos](./018-export-todos.md)
 - [ ] [019 - Keyboard Shortcuts](./019-keyboard-shortcuts.md)
-- [ ] [020 - Dark Mode](./020-dark-mode.md)
+- [x] [020 - Dark Mode](./020-dark-mode.md)
