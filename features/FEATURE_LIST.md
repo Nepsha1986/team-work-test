@@ -11,7 +11,7 @@ Each feature is marked done by the Feature Team in the same PR that implements i
 - [ ] [004 - Complete Todo](./004-complete-todo.md)
 - [ ] [005 - Delete Todo](./005-delete-todo.md)
 - [ ] [006 - Edit Todo Title](./006-edit-todo-title.md)
-- [ ] [007 - Todo Categories](./007-todo-categories.md)
+- [x] [007 - Todo Categories](./007-todo-categories.md)
 - [ ] [008 - Due Dates](./008-due-dates.md)
 - [ ] [009 - Priority Levels](./009-priority-levels.md)
 - [ ] [010 - Todo Notes](./010-todo-notes.md)
