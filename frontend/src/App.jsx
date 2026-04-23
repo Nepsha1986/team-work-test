@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from './useTheme';
 import Stats from './Stats';
 
@@ -14,17 +14,84 @@ function CategoryBadge({ category }) {
       borderRadius: 4,
       background: '#e0e0e0',
       color: '#555',
-      marginLeft: 8,
+      marginLeft: 4,
       verticalAlign: 'middle',
     }}>{cat}</span>
   );
 }
 
-function TodoItem({ todo }) {
+function TodoItem({ todo, onToggle, onDelete, onTitleSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [inputError, setInputError] = useState(false);
+  const cancelledRef = useRef(false);
+
+  async function handleCheck() {
+    const res = await fetch(`/api/todos/${todo.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: !todo.completed }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      onToggle(updated);
+    }
+  }
+
+  function startEdit() {
+    cancelledRef.current = false;
+    setDraft(todo.title);
+    setInputError(false);
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    if (cancelledRef.current) return;
+    if (!draft.trim()) { setInputError(true); return; }
+    const res = await fetch(`/api/todos/${todo.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: draft.trim() }),
+    });
+    if (res.ok) { setEditing(false); onTitleSaved(); }
+  }
+
+  function cancelEdit() {
+    cancelledRef.current = true;
+    setEditing(false);
+    setDraft('');
+    setInputError(false);
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') saveEdit();
+    if (e.key === 'Escape') cancelEdit();
+  }
+
+  if (editing) {
+    return (
+      <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input type="checkbox" checked={todo.completed} onChange={handleCheck} />
+        <input
+          autoFocus
+          value={draft}
+          onChange={e => { setDraft(e.target.value); setInputError(false); }}
+          onBlur={saveEdit}
+          onKeyDown={handleKeyDown}
+          style={{ border: inputError ? '2px solid red' : undefined }}
+        />
+        <CategoryBadge category={todo.category} />
+        <button onClick={() => onDelete(todo.id)} title="Delete" aria-label="Delete todo">🗑</button>
+      </li>
+    );
+  }
+
   return (
-    <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
-      {todo.title}
+    <li style={{ textDecoration: todo.completed ? 'line-through' : 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <input type="checkbox" checked={todo.completed} onChange={handleCheck} />
+      <span onDoubleClick={startEdit} title="Double-click to edit">{todo.title}</span>
       <CategoryBadge category={todo.category} />
+      <button onClick={() => onDelete(todo.id)} title="Delete" aria-label="Delete todo">🗑</button>
     </li>
   );
 }
@@ -48,6 +115,13 @@ function App() {
     fetch('/api/todos').then(r => r.ok ? r.json() : Promise.reject()).then(data => { setTodos(data); setLoading(false); }).catch(() => { setError('Failed to load todos'); setLoading(false); });
   }
   useEffect(loadTodos, []);
+
+  async function handleDelete(id) {
+    const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+    if (res.ok || res.status === 204) {
+      setTodos(prev => prev.filter(t => t.id !== id));
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault(); setError('');
@@ -106,7 +180,7 @@ function App() {
       )}
       {loading && <p>Loading...</p>}
       {!loading && displayedTodos.length === 0 && <p>No todos yet</p>}
-      {!loading && displayedTodos.length > 0 && <ul>{displayedTodos.map(t => <TodoItem key={t.id} todo={t} />)}</ul>}
+      {!loading && displayedTodos.length > 0 && <ul>{displayedTodos.map(t => <TodoItem key={t.id} todo={t} onToggle={updated => setTodos(prev => prev.map(x => x.id === updated.id ? updated : x))} onDelete={handleDelete} onTitleSaved={loadTodos} />)}</ul>}
     </div>
   );
 }

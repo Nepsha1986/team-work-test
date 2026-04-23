@@ -26,11 +26,25 @@ router.post('/todos', (req, res) => {
 router.patch('/todos/:id', (req, res) => {
   const todos = readTodos();
   const idx = todos.findIndex(t => t.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Todo not found' });
-  const { category } = req.body;
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const { title, completed, category } = req.body;
+  if (title !== undefined) {
+    if (!title || !title.trim()) return res.status(400).json({ error: 'Title must not be empty' });
+    todos[idx].title = title.trim();
+  }
+  if (completed !== undefined) todos[idx].completed = Boolean(completed);
   if (category !== undefined) todos[idx].category = category && category.trim() ? category.trim() : 'general';
   writeTodos(todos);
   res.json(todos[idx]);
+});
+
+router.delete('/todos/:id', (req, res) => {
+  const todos = readTodos();
+  const index = todos.findIndex(t => t.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Not found' });
+  todos.splice(index, 1);
+  writeTodos(todos);
+  res.status(204).end();
 });
 
 router.get('/todos/export', (req, res) => {
