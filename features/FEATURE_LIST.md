@@ -7,7 +7,7 @@ Each feature is marked done by the Feature Team in the same PR that implements i
 
 - [x] [001 - Project Scaffolding](./001-project-scaffolding.md)
 - [ ] [002 - Create Todo](./002-create-todo.md)
-- [ ] [003 - List Todos](./003-list-todos.md)
+- [x] [003 - List Todos](./003-list-todos.md)
 - [ ] [004 - Complete Todo](./004-complete-todo.md)
 - [ ] [005 - Delete Todo](./005-delete-todo.md)
 - [ ] [006 - Edit Todo Title](./006-edit-todo-title.md)
