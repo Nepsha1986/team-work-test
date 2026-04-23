@@ -2,8 +2,13 @@ import { useState, useEffect } from 'react';
 import { useTheme } from './useTheme';
 import Stats from './Stats';
 
-function TodoItem({ todo }) {
-  return <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>{todo.title}</li>;
+function TodoItem({ todo, onDelete }) {
+  return (
+    <li style={{ textDecoration: todo.completed ? 'line-through' : 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <span>{todo.title}</span>
+      <button onClick={() => onDelete(todo.id)} title="Delete" aria-label="Delete todo">🗑</button>
+    </li>
+  );
 }
 
 function ExportButton() {
@@ -23,6 +28,13 @@ function App() {
     fetch('/api/todos').then(r => r.ok ? r.json() : Promise.reject()).then(data => { setTodos(data); setLoading(false); }).catch(() => { setError('Failed to load todos'); setLoading(false); });
   }
   useEffect(loadTodos, []);
+
+  async function handleDelete(id) {
+    const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+    if (res.ok || res.status === 204) {
+      setTodos(prev => prev.filter(t => t.id !== id));
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault(); setError('');
@@ -50,7 +62,7 @@ function App() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {loading && <p>Loading...</p>}
       {!loading && todos.length === 0 && <p>No todos yet</p>}
-      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} />)}</ul>}
+      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} onDelete={handleDelete} />)}</ul>}
     </div>
   );
 }
