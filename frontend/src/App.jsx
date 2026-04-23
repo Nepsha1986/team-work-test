@@ -2,8 +2,25 @@ import { useState, useEffect } from 'react';
 import { useTheme } from './useTheme';
 import Stats from './Stats';
 
-function TodoItem({ todo }) {
-  return <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>{todo.title}</li>;
+function TodoItem({ todo, onToggle }) {
+  async function handleCheck() {
+    const res = await fetch(`/api/todos/${todo.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: !todo.completed }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      onToggle(updated);
+    }
+  }
+
+  return (
+    <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+      <input type="checkbox" checked={todo.completed} onChange={handleCheck} />
+      {' '}{todo.title}
+    </li>
+  );
 }
 
 function ExportButton() {
@@ -50,7 +67,7 @@ function App() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {loading && <p>Loading...</p>}
       {!loading && todos.length === 0 && <p>No todos yet</p>}
-      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} />)}</ul>}
+      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} onToggle={updated => setTodos(prev => prev.map(x => x.id === updated.id ? updated : x))} />)}</ul>}
     </div>
   );
 }
