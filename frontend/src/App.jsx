@@ -2,11 +2,23 @@ import { useState, useEffect, useRef } from 'react';
 import { useTheme } from './useTheme';
 import Stats from './Stats';
 
-function TodoItem({ todo, onTitleSaved }) {
+function TodoItem({ todo, onToggle, onDelete, onTitleSaved }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [inputError, setInputError] = useState(false);
   const cancelledRef = useRef(false);
+
+  async function handleCheck() {
+    const res = await fetch(`/api/todos/${todo.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: !todo.completed }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      onToggle(updated);
+    }
+  }
 
   function startEdit() {
     cancelledRef.current = false;
@@ -40,7 +52,8 @@ function TodoItem({ todo, onTitleSaved }) {
 
   if (editing) {
     return (
-      <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+      <li style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <input type="checkbox" checked={todo.completed} onChange={handleCheck} />
         <input
           autoFocus
           value={draft}
@@ -49,13 +62,16 @@ function TodoItem({ todo, onTitleSaved }) {
           onKeyDown={handleKeyDown}
           style={{ border: inputError ? '2px solid red' : undefined }}
         />
+        <button onClick={() => onDelete(todo.id)} title="Delete" aria-label="Delete todo">🗑</button>
       </li>
     );
   }
 
   return (
-    <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+    <li style={{ textDecoration: todo.completed ? 'line-through' : 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <input type="checkbox" checked={todo.completed} onChange={handleCheck} />
       <span onDoubleClick={startEdit} title="Double-click to edit">{todo.title}</span>
+      <button onClick={() => onDelete(todo.id)} title="Delete" aria-label="Delete todo">🗑</button>
     </li>
   );
 }
@@ -77,6 +93,13 @@ function App() {
     fetch('/api/todos').then(r => r.ok ? r.json() : Promise.reject()).then(data => { setTodos(data); setLoading(false); }).catch(() => { setError('Failed to load todos'); setLoading(false); });
   }
   useEffect(loadTodos, []);
+
+  async function handleDelete(id) {
+    const res = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+    if (res.ok || res.status === 204) {
+      setTodos(prev => prev.filter(t => t.id !== id));
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault(); setError('');
@@ -104,7 +127,7 @@ function App() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {loading && <p>Loading...</p>}
       {!loading && todos.length === 0 && <p>No todos yet</p>}
-      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} onTitleSaved={loadTodos} />)}</ul>}
+      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} onToggle={updated => setTodos(prev => prev.map(x => x.id === updated.id ? updated : x))} onDelete={handleDelete} onTitleSaved={loadTodos} />)}</ul>}
     </div>
   );
 }
