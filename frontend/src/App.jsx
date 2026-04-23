@@ -2,9 +2,22 @@ import { useState, useEffect } from 'react';
 import { useTheme } from './useTheme';
 import Stats from './Stats';
 
-function TodoItem({ todo, onDelete }) {
+function TodoItem({ todo, onToggle, onDelete }) {
+  async function handleCheck() {
+    const res = await fetch(`/api/todos/${todo.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ completed: !todo.completed }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      onToggle(updated);
+    }
+  }
+
   return (
     <li style={{ textDecoration: todo.completed ? 'line-through' : 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+      <input type="checkbox" checked={todo.completed} onChange={handleCheck} />
       <span>{todo.title}</span>
       <button onClick={() => onDelete(todo.id)} title="Delete" aria-label="Delete todo">🗑</button>
     </li>
@@ -62,7 +75,7 @@ function App() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {loading && <p>Loading...</p>}
       {!loading && todos.length === 0 && <p>No todos yet</p>}
-      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} onDelete={handleDelete} />)}</ul>}
+      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} onToggle={updated => setTodos(prev => prev.map(x => x.id === updated.id ? updated : x))} onDelete={handleDelete} />)}</ul>}
     </div>
   );
 }

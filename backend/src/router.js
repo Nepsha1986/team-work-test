@@ -21,6 +21,17 @@ router.post('/todos', (req, res) => {
   res.status(201).json(todo);
 });
 
+router.patch('/todos/:id', (req, res) => {
+  const todos = readTodos();
+  const index = todos.findIndex(t => t.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Not found' });
+  const { completed } = req.body;
+  if (typeof completed !== 'boolean') return res.status(400).json({ error: 'completed must be a boolean' });
+  todos[index] = { ...todos[index], completed };
+  writeTodos(todos);
+  res.json(todos[index]);
+});
+
 router.delete('/todos/:id', (req, res) => {
   const todos = readTodos();
   const index = todos.findIndex(t => t.id === req.params.id);
