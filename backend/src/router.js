@@ -6,19 +6,31 @@ const { readTodos, writeTodos } = require('./storage');
 router.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 router.get('/todos', (req, res) => {
-  const todos = readTodos();
+  const { category } = req.query;
+  let todos = readTodos();
+  if (category) todos = todos.filter(t => (t.category || 'general') === category);
   const sorted = [...todos].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   res.json(sorted);
 });
 
 router.post('/todos', (req, res) => {
-  const { title } = req.body;
+  const { title, category } = req.body;
   if (!title || !title.trim()) return res.status(400).json({ error: 'Title is required' });
   const todos = readTodos();
-  const todo = { id: crypto.randomUUID(), title: title.trim(), completed: false, createdAt: new Date().toISOString() };
+  const todo = { id: crypto.randomUUID(), title: title.trim(), completed: false, category: category && category.trim() ? category.trim() : 'general', createdAt: new Date().toISOString() };
   todos.push(todo);
   writeTodos(todos);
   res.status(201).json(todo);
+});
+
+router.patch('/todos/:id', (req, res) => {
+  const todos = readTodos();
+  const idx = todos.findIndex(t => t.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Todo not found' });
+  const { category } = req.body;
+  if (category !== undefined) todos[idx].category = category && category.trim() ? category.trim() : 'general';
+  writeTodos(todos);
+  res.json(todos[idx]);
 });
 
 router.get('/todos/export', (req, res) => {
