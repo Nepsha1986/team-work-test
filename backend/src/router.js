@@ -5,6 +5,14 @@ const { readTodos, writeTodos } = require('./storage');
 
 router.get('/health', (req, res) => res.json({ status: 'ok' }));
 
+router.get('/todos', (req, res) => {
+  const todos = readTodos();
+  const sorted = [...todos].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+  );
+  res.json(sorted);
+});
+
 router.post('/todos', (req, res) => {
   const { title } = req.body;
   if (!title || !title.trim()) {
