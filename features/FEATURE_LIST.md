@@ -22,6 +22,6 @@ Each feature is marked done by the Feature Team in the same PR that implements i
 - [ ] [015 - Archive Completed Todos](./015-archive.md)
 - [ ] [016 - Bulk Operations](./016-bulk-operations.md)
 - [ ] [017 - Statistics Dashboard](./017-statistics-dashboard.md)
-- [ ] [018 - Export Todos](./018-export-todos.md)
+- [x] [018 - Export Todos](./018-export-todos.md)
 - [ ] [019 - Keyboard Shortcuts](./019-keyboard-shortcuts.md)
 - [ ] [020 - Dark Mode](./020-dark-mode.md)
