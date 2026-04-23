@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTheme } from './useTheme';
 import Stats from './Stats';
 
@@ -6,14 +6,17 @@ function TodoItem({ todo, onTitleSaved }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [inputError, setInputError] = useState(false);
+  const cancelledRef = useRef(false);
 
   function startEdit() {
+    cancelledRef.current = false;
     setDraft(todo.title);
     setInputError(false);
     setEditing(true);
   }
 
   async function saveEdit() {
+    if (cancelledRef.current) return;
     if (!draft.trim()) { setInputError(true); return; }
     const res = await fetch(`/api/todos/${todo.id}`, {
       method: 'PATCH',
@@ -23,7 +26,12 @@ function TodoItem({ todo, onTitleSaved }) {
     if (res.ok) { setEditing(false); onTitleSaved(); }
   }
 
-  function cancelEdit() { setEditing(false); setDraft(''); setInputError(false); }
+  function cancelEdit() {
+    cancelledRef.current = true;
+    setEditing(false);
+    setDraft('');
+    setInputError(false);
+  }
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') saveEdit();
