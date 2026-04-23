@@ -21,6 +21,15 @@ router.post('/todos', (req, res) => {
   res.status(201).json(todo);
 });
 
+router.delete('/todos/:id', (req, res) => {
+  const todos = readTodos();
+  const index = todos.findIndex(t => t.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Not found' });
+  todos.splice(index, 1);
+  writeTodos(todos);
+  res.status(204).end();
+});
+
 router.get('/todos/export', (req, res) => {
   const { format = 'json', category, status, priority } = req.query;
   let todos = readTodos();
