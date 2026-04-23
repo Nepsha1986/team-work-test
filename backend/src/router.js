@@ -21,6 +21,22 @@ router.post('/todos', (req, res) => {
   res.status(201).json(todo);
 });
 
+router.patch('/todos/:id', (req, res) => {
+  const todos = readTodos();
+  const idx = todos.findIndex(t => t.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Todo not found' });
+  const { title, completed } = req.body;
+  if (title !== undefined) {
+    if (!title || !title.trim()) return res.status(400).json({ error: 'Title must not be empty' });
+    todos[idx].title = title.trim();
+  }
+  if (completed !== undefined) {
+    todos[idx].completed = Boolean(completed);
+  }
+  writeTodos(todos);
+  res.json(todos[idx]);
+});
+
 router.get('/todos/export', (req, res) => {
   const { format = 'json', category, status, priority } = req.query;
   let todos = readTodos();
