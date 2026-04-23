@@ -6,23 +6,26 @@ const { readTodos, writeTodos } = require('./storage');
 router.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 router.get('/todos', (req, res) => {
+  const { category, overdue } = req.query;
   let todos = readTodos();
-  if (req.query.overdue === 'true') {
+  if (overdue === 'true') {
     const today = new Date().toISOString().slice(0, 10);
     todos = todos.filter(t => t.dueDate && t.dueDate < today && !t.completed);
   }
+  if (category) todos = todos.filter(t => (t.category || 'general') === category);
   const sorted = [...todos].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   res.json(sorted);
 });
 
 router.post('/todos', (req, res) => {
-  const { title, dueDate } = req.body;
+  const { title, category, dueDate } = req.body;
   if (!title || !title.trim()) return res.status(400).json({ error: 'Title is required' });
   const todos = readTodos();
   const todo = {
     id: crypto.randomUUID(),
     title: title.trim(),
     completed: false,
+    category: category && category.trim() ? category.trim() : 'general',
     dueDate: dueDate || null,
     createdAt: new Date().toISOString()
   };
@@ -34,13 +37,26 @@ router.post('/todos', (req, res) => {
 router.patch('/todos/:id', (req, res) => {
   const todos = readTodos();
   const idx = todos.findIndex(t => t.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Todo not found' });
-  const { title, completed, dueDate } = req.body;
-  if (title !== undefined) todos[idx].title = title.trim();
-  if (completed !== undefined) todos[idx].completed = completed;
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  const { title, completed, category, dueDate } = req.body;
+  if (title !== undefined) {
+    if (!title || !title.trim()) return res.status(400).json({ error: 'Title must not be empty' });
+    todos[idx].title = title.trim();
+  }
+  if (completed !== undefined) todos[idx].completed = Boolean(completed);
+  if (category !== undefined) todos[idx].category = category && category.trim() ? category.trim() : 'general';
   if (dueDate !== undefined) todos[idx].dueDate = dueDate || null;
   writeTodos(todos);
   res.json(todos[idx]);
+});
+
+router.delete('/todos/:id', (req, res) => {
+  const todos = readTodos();
+  const index = todos.findIndex(t => t.id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: 'Not found' });
+  todos.splice(index, 1);
+  writeTodos(todos);
+  res.status(204).end();
 });
 
 router.get('/todos/export', (req, res) => {
