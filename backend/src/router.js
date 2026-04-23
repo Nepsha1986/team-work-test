@@ -6,19 +6,41 @@ const { readTodos, writeTodos } = require('./storage');
 router.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 router.get('/todos', (req, res) => {
-  const todos = readTodos();
+  let todos = readTodos();
+  if (req.query.overdue === 'true') {
+    const today = new Date().toISOString().slice(0, 10);
+    todos = todos.filter(t => t.dueDate && t.dueDate < today && !t.completed);
+  }
   const sorted = [...todos].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   res.json(sorted);
 });
 
 router.post('/todos', (req, res) => {
-  const { title } = req.body;
+  const { title, dueDate } = req.body;
   if (!title || !title.trim()) return res.status(400).json({ error: 'Title is required' });
   const todos = readTodos();
-  const todo = { id: crypto.randomUUID(), title: title.trim(), completed: false, createdAt: new Date().toISOString() };
+  const todo = {
+    id: crypto.randomUUID(),
+    title: title.trim(),
+    completed: false,
+    dueDate: dueDate || null,
+    createdAt: new Date().toISOString()
+  };
   todos.push(todo);
   writeTodos(todos);
   res.status(201).json(todo);
+});
+
+router.patch('/todos/:id', (req, res) => {
+  const todos = readTodos();
+  const idx = todos.findIndex(t => t.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Todo not found' });
+  const { title, completed, dueDate } = req.body;
+  if (title !== undefined) todos[idx].title = title.trim();
+  if (completed !== undefined) todos[idx].completed = completed;
+  if (dueDate !== undefined) todos[idx].dueDate = dueDate || null;
+  writeTodos(todos);
+  res.json(todos[idx]);
 });
 
 router.get('/todos/export', (req, res) => {
