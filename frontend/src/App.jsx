@@ -2,8 +2,54 @@ import { useState, useEffect } from 'react';
 import { useTheme } from './useTheme';
 import Stats from './Stats';
 
-function TodoItem({ todo }) {
-  return <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>{todo.title}</li>;
+function TodoItem({ todo, onTitleSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [inputError, setInputError] = useState(false);
+
+  function startEdit() {
+    setDraft(todo.title);
+    setInputError(false);
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    if (!draft.trim()) { setInputError(true); return; }
+    const res = await fetch(`/api/todos/${todo.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: draft.trim() }),
+    });
+    if (res.ok) { setEditing(false); onTitleSaved(); }
+  }
+
+  function cancelEdit() { setEditing(false); setDraft(''); setInputError(false); }
+
+  function handleKeyDown(e) {
+    if (e.key === 'Enter') saveEdit();
+    if (e.key === 'Escape') cancelEdit();
+  }
+
+  if (editing) {
+    return (
+      <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+        <input
+          autoFocus
+          value={draft}
+          onChange={e => { setDraft(e.target.value); setInputError(false); }}
+          onBlur={saveEdit}
+          onKeyDown={handleKeyDown}
+          style={{ border: inputError ? '2px solid red' : undefined }}
+        />
+      </li>
+    );
+  }
+
+  return (
+    <li style={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+      <span onDoubleClick={startEdit} title="Double-click to edit">{todo.title}</span>
+    </li>
+  );
 }
 
 function ExportButton() {
@@ -50,7 +96,7 @@ function App() {
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {loading && <p>Loading...</p>}
       {!loading && todos.length === 0 && <p>No todos yet</p>}
-      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} />)}</ul>}
+      {!loading && todos.length > 0 && <ul>{todos.map(t => <TodoItem key={t.id} todo={t} onTitleSaved={loadTodos} />)}</ul>}
     </div>
   );
 }
